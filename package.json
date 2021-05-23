@@ -2,7 +2,7 @@
   "name": "Content-Management-System",
   "version": "1.0.0",
   "description": "An application that allows a user to view and update their employee's details.",
-  "main": "index.js",
+  "main": "./Develop/js/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
