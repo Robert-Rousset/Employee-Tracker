@@ -1,0 +1,16 @@
+{
+  "name": "Content-Management-System",
+  "version": "1.0.0",
+  "description": "An application that allows a user to view and update their employee's details.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Robert Rousset",
+  "license": "MIT",
+  "dependencies": {
+    "inquirer": "^8.1.0",
+    "mysql2": "^2.2.5"
+  }
+}
