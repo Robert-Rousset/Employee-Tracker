@@ -193,8 +193,6 @@ function UpdateRole(){
             ])
             init()
         })
-        
-        
         console.log(response)
     })
 }
