@@ -61,10 +61,12 @@ let addEmployee = [
         choices: `${allManagerNames}`
     }
 ]
+
 //------------------------------------------------------------------\\
 
 // Function that starts prompts, then dictates which option the user selects \\
 function init(){
+
     inquirer.prompt(firstQuestions).then((response)=>{
         switch(response.firstList){
             case "View All Employees":
@@ -99,7 +101,7 @@ function DisplayAllEmployees(){
         if(error) throw error;
         console.table(response)
     })
-
+    init()
 };
 // INNER JOIN employee_role ON role_id = employee.id INNER JOIN department ON department_id = employee_role.id
 
@@ -136,20 +138,71 @@ function AddEmployee(){
    
 }
 
-function RemoveEmployee(){
-    inquirer.prompt(removeEmployee).then((response)=>{
-        console.log(response)
+let employeeNames = []
+
+let selectEmployee = [
+    {
+        type: 'list',
+        name: 'selection',
+        message: 'Who would you like to remove?',
+        choices: employeeNames
+    }
+]
+
+connection.query(`SELECT first_name, last_name FROM employee`, (error, response)=> {
+    if(error) throw error;
+    response.forEach(element=>{
+        employeeNames.push(element.first_name +" "+ element.last_name)
     })
+})
+
+function RemoveEmployee(){
+    // let employeeNames = []
+    inquirer.prompt(selectEmployee).then((response)=>{
+        let eachName = response.selection.split(" ")
+        let first_name = eachName.shift()
+        connection.query(`DELETE FROM employee WHERE ?`, {
+            first_name: first_name,
+        })
+        init()
+    }) 
 }
 
+let roleUpdate = [
+    {
+        type: 'list',
+        name: 'roleUpdate',
+        message: "What role would you like to change the employee to?",
+        choices: ["Sales Person", "Sales Lead", "Software Engineer", "Lead Engineer", "Lawyer", "Accountant"]
+    }
+]
+
 function UpdateRole(){
-    inquirer.prompt(updateRole).then((response)=>{
+    inquirer.prompt(selectEmployee).then((response)=>{
+        let eachName = response.selection.split(" ")
+        let first_name = eachName.shift()
+        inquirer.prompt(roleUpdate).then((response)=>{
+            console.log(response.roleUpdate)
+            connection.query(`UPDATE employee_role SET ? WHERE ?`, [
+                {
+                    title: response.roleUpdate,
+                },
+                {
+                    first_name: first_name,
+                }
+            ])
+            init()
+        })
+        
+        
         console.log(response)
     })
 }
 
 function UpdateManager(){
-    inquirer.prompt(updateManager).then((response)=>{
+    inquirer.prompt(selectEmployee).then((response)=>{
+        let eachName = response.selection.split(" ")
+        let first_name = eachName.shift()
         console.log(response)
     })
 }
@@ -157,5 +210,6 @@ function UpdateManager(){
 connection.connect((error)=>{
     if(error) throw error;
     console.log(`connected as id ${connection.threadId}`)
+    
     init()
 });
