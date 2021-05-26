@@ -6,13 +6,10 @@ const cTable = require('console.table');
 const connection = mysql.createConnection({
     host: 'localhost',
   
-    // Your port; if not 3306
     port: 3306,
   
-    // Your username
     user: 'root',
-  
-    // Be sure to update with your own MySQL password!
+
     password: 'password',
     database: 'employee_db',
 });
@@ -98,11 +95,13 @@ function init(){
 //----------- All Prompt Functions for each option -----------\\
 
 function DisplayAllEmployees(){
-    inquirer.prompt(displayAll).then((response)=>{
-        console.log(response)
-        init()
+    connection.query(`SELECT * FROM employee`, (error, response) =>{
+        if(error) throw error;
+        console.table(response)
     })
+
 };
+// INNER JOIN employee_role ON role_id = employee.id INNER JOIN department ON department_id = employee_role.id
 
 function DisplayAllEmployeesByDepartment(){
     inquirer.prompt(displayByRole).then((response)=>{
