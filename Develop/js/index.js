@@ -34,7 +34,8 @@ let firstQuestions = [
   },
 ];
 
-let addEmployeeQ1 = [
+// ADDING THE EMPLOYEE QUESTIONS
+let addEmployees = [
   {
     type: "input",
     name: "first_name",
@@ -45,18 +46,12 @@ let addEmployeeQ1 = [
     name: "last_name",
     message: "What is the employee's last name?",
   },
-];
-
-let addEmployeeQ2 = [
   {
     type: `list`,
     name: `department`,
     message: `Which department does the Employee work in?`,
     choices: [`Sales`, `Engineering`, `Finance`, `Legal`],
   },
-];
-
-let addEmployeeQ3 = [
   {
     type: "list",
     name: "title",
@@ -83,6 +78,15 @@ let addEmployeeQ3 = [
   },
 ];
 
+let displayByDepartment = [
+  {
+    type: "list",
+    name: "department",
+    message: "Which department?",
+    choices: ["Sales", "Engineering", "Finance", "Legal"],
+  },
+];
+
 //------------------------------------------------------------------\\
 
 // Function that starts prompts, then dictates which option the user selects \\
@@ -90,25 +94,25 @@ function init() {
   inquirer.prompt(firstQuestions).then((response) => {
     switch (response.firstList) {
       case "View All Employees":
-        DisplayAllEmployees();
+        displayAllEmployees();
         break;
       case "View All Employees By Department":
-        DisplayAllEmployeesByDepartment();
+        displayAllEmployeesByDepartment();
         break;
       case "View All Employees By Manager":
-        DisplayAllEmployeesByManager();
+        displayAllEmployeesByManager();
         break;
       case "Add Employee":
-        AddEmployeeNames();
+        addEmployee();
         break;
       case "Remove Employee":
-        RemoveEmployee();
+        removeEmployee();
         break;
       case "Update Employee Role":
-        UpdateRole();
+        updateRole();
         break;
       case "Update Employee's Manager":
-        UpdateManager();
+        updateManager();
         break;
     }
   });
@@ -116,53 +120,49 @@ function init() {
 
 //----------- All Prompt Functions for each option -----------\\
 
-function DisplayAllEmployees() {
+function displayAllEmployees() {
   connection.query(
     `SELECT * FROM employee 
     JOIN employee_role ON role_id = employee_role.id
     JOIN department ON department_id = department.id`,
     (error, response) => {
       if (error) throw error;
-      console.table("\n", response);
+      console.table("\n",response, "\n");
     }
   );
   init();
 }
 
-// function DisplayAllEmployeesByDepartment(){
-//     inquirer.prompt(displayByRole).then((response)=>{
-//         console.log(response)
-//         init()
-//     })
-// };
-
-// function DisplayAllEmployeesByManager(){
-//     inquirer.prompt(displayByManager).then((response)=>{
-//         console.log(response)
-//         init()
-//     })
-// };
-
-let employeeId; 
-
-function AddEmployeeNames() {
-  inquirer.prompt(addEmployeeQ1).then((response) => {
+function displayAllEmployeesByDepartment() {
+  inquirer.prompt(displayByDepartment).then((response) => {
     connection.query(
-      `INSERT INTO employee SET ?`,
-      {
-        first_name: response.first_name,
-        last_name: response.last_name,
-      },
+      `SELECT * FROM department
+      JOIN employee_role ON department_id = department.id
+      JOIN employee ON role_id = employee_role.id
+      WHERE department_name = "${response.department}"`,
       (error, response) => {
         if (error) throw error;
+     
+        console.table("\n", response, "\n");
+        
       }
     );
-    AddEmployeeDepartment();
+    init();
   });
 }
 
-function AddEmployeeDepartment() {
-  inquirer.prompt(addEmployeeQ2).then((response) => {
+function displayAllEmployeesByManager() {
+  inquirer.prompt(displayByManager).then((response) => {
+    console.log(response);
+    init();
+  });
+}
+
+//--------ALL FUNCTIONS THAT ADD EMPLOYEE DATA--------\\
+
+function addEmployee() {
+  inquirer.prompt(addEmployees).then((response) => {
+    // Inserting the responses into the tables
     connection.query(
       `INSERT INTO department SET ?`,
       {
@@ -172,115 +172,161 @@ function AddEmployeeDepartment() {
         if (error) throw error;
       }
     );
-    AddEmployeeRoles();
-  });
-}
 
-function AddEmployeeRoles() {
-  inquirer.prompt(addEmployeeQ3).then((response) => {
+    // unfortunately a bit of ugly nesting here because the unique department/role id's info got lost if they were out of scope, and I couldn't seem to add them to an empty variable out of scope (as all functions are completed at once after the prompts). I could have used async await here too i think but this work and took me far too long to get working!
     connection.query(
-      `INSERT INTO employee_role SET ?`,
-      {
-        title: response.title,
-        salary: response.salary,
-      },
-      (error, response) => {
-        if (error) throw error;
+      `SELECT id FROM department ORDER BY id DESC`,
+      (error, deptId) => {
+        deptIdNum = deptId[0].id;
+        connection.query(
+          `INSERT INTO employee_role SET ?`,
+          {
+            title: response.title,
+            salary: response.salary,
+            department_id: deptIdNum,
+          },
+          (error, response) => {
+            if (error) throw error;
+          }
+        );
+        connection.query(
+          `SELECT id FROM employee_role ORDER BY id DESC`,
+          (error, roleId) => {
+            roleIdNum = roleId[0].id;
+
+            connection.query(
+              `INSERT INTO employee SET ?`,
+              {
+                first_name: response.first_name,
+                last_name: response.last_name,
+                role_id: roleIdNum,
+              },
+              (error, response) => {
+                if (error) throw error;
+              }
+            );
+          }
+        );
       }
     );
-    UpdateEmployeeIds();
+    init();
   });
 }
 
-function UpdateEmployeeIds() {
-  connection.query(
-    `SELECT id FROM department ORDER BY id DESC`,
-    (error, deptId) => {
-      let deptIdNumber = deptId[0].id;
-      connection.query(`UPDATE employee_role SET ? WHERE ${deptIdNumber} = id`, {
-        department_id: deptIdNumber,
-      });
-    }
-  );
+// creating an empty array for the employee names so they can be selected
+let employeeNames = [];
 
+let selectEmployee = [
+  {
+    type: "list",
+    name: "selection",
+    message: "Which employee?",
+    choices: employeeNames,
+  },
+];
+
+function removeEmployee() {
   connection.query(
-    `SELECT id FROM employee_role ORDER BY id DESC`,
-    (error, roleId) => {
-      let roleIdNumber = roleId[0].id;
-      connection.query(`UPDATE employee SET ? WHERE ${roleIdNumber} = id`, {
-        role_id: roleIdNumber,
+    `SELECT first_name, last_name FROM employee`,
+    (error, response) => {
+      if (error) throw error;
+
+      // reducing the employee name array to zero so that it doesn't create duplicates after multiple selections of this function.
+      employeeNames.length = 0;
+
+      // pushing all the response elements to the array
+      response.forEach((element) => {
+        employeeNames.push(element.first_name + " " + element.last_name);
       });
+      selectEmployeeToRemove();
     }
   );
-  init()
 }
 
-// let employeeNames = []
+function selectEmployeeToRemove() {
+  inquirer.prompt(selectEmployee).then((response) => {
+    let eachName = response.selection.split(" ");
+    let first_name = eachName.shift();
+    connection.query(
+      // grabbing the correct ID so that each row can be deleted with its unique indentifier.
+      `SELECT id FROM employee WHERE first_name = "${first_name}"`,
+      (error, id) => {
+        let idNumber = id[0].id;
 
-// let selectEmployee = [
-//     {
-//         type: 'list',
-//         name: 'selection',
-//         message: 'Which employee?',
-//         choices: employeeNames
-//     }
-// ]
+        connection.query(`DELETE FROM employee WHERE id = "${idNumber}"`);
+        connection.query(`DELETE FROM employee_role WHERE id = "${idNumber}"`);
+        connection.query(`DELETE FROM department WHERE id = "${idNumber}"`);
+      }
+    );
+    init();
+  });
+}
 
-// function RemoveEmployee(){
+let roleUpdate = [
+  {
+    type: "list",
+    name: "roleUpdate",
+    message: "What role would you like to change the employee to?",
+    choices: [
+      "Sales Person",
+      "Sales Lead",
+      "Software Engineer",
+      "Lead Engineer",
+      "Lawyer",
+      "Accountant",
+    ],
+  },
+];
 
-//     connection.query(`SELECT first_name, last_name FROM employee`, (error, response)=> {
-//         if(error) throw error;
-//         response.forEach(element=>{
-//             employeeNames.push(element.first_name +" "+ element.last_name)
-//         })
-//     })
+function updateRole() {
+  connection.query(
+    `SELECT first_name, last_name FROM employee`,
+    (error, response) => {
+      if (error) throw error;
 
-//     inquirer.prompt(selectEmployee).then((response)=>{
-//         let eachName = response.selection.split(" ")
-//         let first_name = eachName.shift()
-//         connection.query(`DELETE FROM employee WHERE ?`, {
-//             first_name: first_name,
-//         })
-//         init()
-//     })
-// }
+      // reducing the employee name array to zero so that it doesn't create duplicates after multiple selections of this function.
+      employeeNames.length = 0;
 
-// let roleUpdate = [
-//     {
-//         type: 'list',
-//         name: 'roleUpdate',
-//         message: "What role would you like to change the employee to?",
-//         choices: ["Sales Person", "Sales Lead", "Software Engineer", "Lead Engineer", "Lawyer", "Accountant"]
-//     }
-// ]
+      // pushing all the response elements to the array
+      response.forEach((element) => {
+        employeeNames.push(element.first_name + " " + element.last_name);
+      });
+      selectEmployeeToUpdate();
+    }
+  );
+}
 
-// function UpdateRole(){
-//     inquirer.prompt(selectEmployee).then((response)=>{
-//         let eachName = response.selection.split(" ")
-//         let first_name = eachName.shift()
-//         inquirer.prompt(roleUpdate).then((response)=>{
-//             console.log(typeof response.roleUpdate)
-//             connection.query(`UPDATE employee_role SET ? WHERE ?`, [
-//                 {
-//                     title: response.roleUpdate,
-//                 },
-//                 {
-//                     first_name: first_name,
-//                 }
-//             ])
-//             init()
-//         })
-//         console.log(response)
-//     })
-// }
+function selectEmployeeToUpdate() {
+  inquirer.prompt(selectEmployee).then((response) => {
+    let eachName = response.selection.split(" ");
+    let first_name = eachName.shift();
+    inquirer.prompt(roleUpdate).then((response) => {
+      connection.query(
+        // grabbing the correct ID so that each row can be deleted with its unique indentifier.
+        `SELECT id FROM employee WHERE first_name = "${first_name}"`,
+        (error, id) => {
+          let idNumber = id[0].id;
+          console.log(typeof response.roleUpdate);
+          connection.query(
+            `UPDATE employee_role SET ? WHERE id = "${idNumber}"`,
+            {
+              title: response.roleUpdate,
+            }
+          );
+          init();
+        }
+      );
+    });
+  });
+}
 
-// function UpdateManager(){
-//     inquirer.prompt(selectEmployee).then((response)=>{
-//         let eachName = response.selection.split(" ")
-//         let first_name = eachName.shift()
-//         console.log(response)
-//     })
-// }
+function updateManager() {
+  inquirer.prompt(selectEmployee).then((response) => {
+    let eachName = response.selection.split(" ");
+    let first_name = eachName.shift();
+    console.log(response);
+  });
+}
 
 connection.connect((error) => {
   if (error) throw error;
