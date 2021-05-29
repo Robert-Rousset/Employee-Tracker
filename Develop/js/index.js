@@ -120,46 +120,32 @@ function DisplayAllEmployees(){
 // };
 
 function AddEmployee(){
-    // Defining department and role ID variables
-    let deptIdNum;
-    let roleIdNum;
     
     inquirer.prompt(addEmployee).then((response)=>{
-        
+    
         connection.query(`INSERT INTO department SET ?`, {
             department_name: response.department,
         }, (error, response)=>{if(error) throw error;})
 
         connection.query(`SELECT id FROM department ORDER BY id DESC`, (error,deptId)=>{
-            // Assigning deptIdNum Variable to the current ID value
-            deptIdNum = deptId[0].id
-            console.log(deptIdNum, "INSIDE, this is the value I want to save")
+            let deptIdNumber = deptId[0].id
+            
+            connection.query(`INSERT INTO employee_role SET ?`, {
+                title: response.title,
+                salary: response.salary, 
+                department_id: deptIdNumber,
+            }, (error, response)=>{if(error) throw error;})
+
+            connection.query(`SELECT id FROM employee_role ORDER BY id DESC`, (error,roleId)=>{
+                let roleIdNumber = roleId[0].id
+                
+                connection.query(`INSERT INTO employee SET ?`, {
+                    first_name: response.first_name,
+                    last_name: response.last_name,
+                    role_id: roleIdNumber,
+                }, (error, response)=>{if(error) throw error;})
+            })
         })
-
-        console.log(deptIdNum, "UNDEFINED, Variable value is somehow lost?")
-
-        connection.query(`INSERT INTO employee_role SET ?`, {
-            title: response.title,
-            salary: response.salary,
-            // Wanting to use that value here
-
-            department_id: deptIdNum,
-        }, (error, response)=>{if(error) throw error;})
-
-        connection.query(`SELECT id FROM employee_role ORDER BY id DESC`, (error,roleId)=>{
-            // Assigning the roleIdNum to the current role ID 
-            roleIdNum = roleId[0].id
-        })
-
-        connection.query(`INSERT INTO employee SET ?`, {
-            first_name: response.first_name,
-            last_name: response.last_name,
-            // Wanting to use the roleIdNum value here
-
-            role_id: roleIdNum,
-        }, (error, response)=>{if(error) throw error;})
-        console.log(deptIdNum, "OUTSIDE")
-        console.log(roleIdNum, "OUTSIDE")
         init()
     })
 
