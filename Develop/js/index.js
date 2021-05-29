@@ -105,105 +105,123 @@ function DisplayAllEmployees(){
 };
 // INNER JOIN employee_role ON role_id = employee.id INNER JOIN department ON department_id = employee_role.id
 
-function DisplayAllEmployeesByDepartment(){
-    inquirer.prompt(displayByRole).then((response)=>{
-        console.log(response)
-        init()
-    })
-};
+// function DisplayAllEmployeesByDepartment(){
+//     inquirer.prompt(displayByRole).then((response)=>{
+//         console.log(response)
+//         init()
+//     })
+// };
 
-function DisplayAllEmployeesByManager(){
-    inquirer.prompt(displayByManager).then((response)=>{
-        console.log(response)
-        init()
-    })
-};
+// function DisplayAllEmployeesByManager(){
+//     inquirer.prompt(displayByManager).then((response)=>{
+//         console.log(response)
+//         init()
+//     })
+// };
 
 function AddEmployee(){
     inquirer.prompt(addEmployee).then((response)=>{
-        connection.query(`INSERT INTO employee SET ?`, {
-            first_name: response.first_name,
-            last_name: response.last_name,
-        }, (error, response)=>{if(error) throw error;})
-        connection.query(`INSERT INTO employee_role SET ?`, {
-            title: response.title,
-            salary: response.salary,
-        }, (error, response)=>{if(error) throw error;})
         connection.query(`INSERT INTO department SET ?`, {
             department_name: response.department,
         }, (error, response)=>{if(error) throw error;})
-        console.log(response)
+
+        
+
+        connection.query(`SELECT id FROM department ORDER BY id DESC`, (error,deptId)=>{
+            console.log("ALL THE DEPT ID's", deptId)
+
+            let justDeptIdNum = deptId[0].id
+            console.log("THE NUMBER I WANT TO KEEP", justDeptIdNum)
+            
+        })
+
+        
+
+        connection.query(`INSERT INTO employee_role SET ?`, {
+            title: response.title,
+            salary: response.salary,
+            department_id: ("THIS IS WHERE I WANT THE ABOVE VARIABLE"),
+        }, (error, response)=>{if(error) throw error;})
+
+        connection.query(`INSERT INTO employee SET ?`, {
+            first_name: response.first_name,
+            last_name: response.last_name,
+
+        }, (error, response)=>{if(error) throw error;})
+
         init()
     })
    
 }
 
-let employeeNames = []
+// let employeeNames = []
 
-let selectEmployee = [
-    {
-        type: 'list',
-        name: 'selection',
-        message: 'Who would you like to remove?',
-        choices: employeeNames
-    }
-]
+// let selectEmployee = [
+//     {
+//         type: 'list',
+//         name: 'selection',
+//         message: 'Which employee?',
+//         choices: employeeNames
+//     }
+// ]
 
-connection.query(`SELECT first_name, last_name FROM employee`, (error, response)=> {
-    if(error) throw error;
-    response.forEach(element=>{
-        employeeNames.push(element.first_name +" "+ element.last_name)
-    })
-})
 
-function RemoveEmployee(){
-    // let employeeNames = []
-    inquirer.prompt(selectEmployee).then((response)=>{
-        let eachName = response.selection.split(" ")
-        let first_name = eachName.shift()
-        connection.query(`DELETE FROM employee WHERE ?`, {
-            first_name: first_name,
-        })
-        init()
-    }) 
-}
 
-let roleUpdate = [
-    {
-        type: 'list',
-        name: 'roleUpdate',
-        message: "What role would you like to change the employee to?",
-        choices: ["Sales Person", "Sales Lead", "Software Engineer", "Lead Engineer", "Lawyer", "Accountant"]
-    }
-]
+// function RemoveEmployee(){
 
-function UpdateRole(){
-    inquirer.prompt(selectEmployee).then((response)=>{
-        let eachName = response.selection.split(" ")
-        let first_name = eachName.shift()
-        inquirer.prompt(roleUpdate).then((response)=>{
-            console.log(response.roleUpdate)
-            connection.query(`UPDATE employee_role SET ? WHERE ?`, [
-                {
-                    title: response.roleUpdate,
-                },
-                {
-                    first_name: first_name,
-                }
-            ])
-            init()
-        })
-        console.log(response)
-    })
-}
+//     connection.query(`SELECT first_name, last_name FROM employee`, (error, response)=> {
+//         if(error) throw error;
+//         response.forEach(element=>{
+//             employeeNames.push(element.first_name +" "+ element.last_name)
+//         })
+//     })
 
-function UpdateManager(){
-    inquirer.prompt(selectEmployee).then((response)=>{
-        let eachName = response.selection.split(" ")
-        let first_name = eachName.shift()
-        console.log(response)
-    })
-}
+//     inquirer.prompt(selectEmployee).then((response)=>{
+//         let eachName = response.selection.split(" ")
+//         let first_name = eachName.shift()
+//         connection.query(`DELETE FROM employee WHERE ?`, {
+//             first_name: first_name,
+//         })
+//         init()
+//     }) 
+// }
+
+// let roleUpdate = [
+//     {
+//         type: 'list',
+//         name: 'roleUpdate',
+//         message: "What role would you like to change the employee to?",
+//         choices: ["Sales Person", "Sales Lead", "Software Engineer", "Lead Engineer", "Lawyer", "Accountant"]
+//     }
+// ]
+
+// function UpdateRole(){
+//     inquirer.prompt(selectEmployee).then((response)=>{
+//         let eachName = response.selection.split(" ")
+//         let first_name = eachName.shift()
+//         inquirer.prompt(roleUpdate).then((response)=>{
+//             console.log(typeof response.roleUpdate)
+//             connection.query(`UPDATE employee_role SET ? WHERE ?`, [
+//                 {
+//                     title: response.roleUpdate,
+//                 },
+//                 {
+//                     first_name: first_name,
+//                 }
+//             ])
+//             init()
+//         })
+//         console.log(response)
+//     })
+// }
+
+// function UpdateManager(){
+//     inquirer.prompt(selectEmployee).then((response)=>{
+//         let eachName = response.selection.split(" ")
+//         let first_name = eachName.shift()
+//         console.log(response)
+//     })
+// }
 
 connection.connect((error)=>{
     if(error) throw error;
