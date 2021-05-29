@@ -4,6 +4,7 @@
   "description": "An application that allows a user to view and update their employee's details.",
   "main": "./Develop/js/index.js",
   "scripts": {
+    "start": "node ./Develop/js/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

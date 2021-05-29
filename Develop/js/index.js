@@ -88,10 +88,12 @@ let displayByDepartment = [
 
 // Function that starts prompts, then dictates which option the user selects \\
 function init() {
+  console.clear()
   inquirer.prompt(firstQuestions).then((response) => {
     switch (response.firstList) {
       case "View All Employees":
         displayAllEmployees();
+        console.clear()
         break;
       case "View All Employees By Department":
         displayAllEmployeesByDepartment();
@@ -118,6 +120,7 @@ function init() {
 //----------- All Prompt Functions for each option -----------\\
 
 function displayAllEmployees() {
+  console.clear()
   connection.query(
     `SELECT * FROM employee 
     JOIN employee_role ON role_id = employee_role.id
@@ -131,6 +134,7 @@ function displayAllEmployees() {
 }
 
 function displayAllEmployeesByDepartment() {
+  console.clear()
   inquirer.prompt(displayByDepartment).then((response) => {
     connection.query(
       `SELECT * FROM department
@@ -144,6 +148,7 @@ function displayAllEmployeesByDepartment() {
       }
     );
     init();
+    console.clear()
   });
 }
 
@@ -162,10 +167,8 @@ function displayAllEmployeesByManager() {
   connection.query(`SELECT manager_name FROM employee`, (error, response) => {
     if (error) throw error;
     allManagerNames.length = 0;
-    console.log(response);
     for (let index = 0; index < response.length; index++) {
       const element = response[index].manager_name;
-      console.log(element);
       if (element != null) {
         allManagerNames.push(element);
       }
@@ -188,6 +191,7 @@ function selectManager() {
       }
     );
     init();
+    console.clear()
   });
 }
 
@@ -243,7 +247,9 @@ function addEmployee() {
         );
       }
     );
+    console.clear()
     init();
+
   });
 }
 
@@ -292,7 +298,9 @@ function selectEmployeeToRemove() {
         connection.query(`DELETE FROM department WHERE id = "${idNumber}"`);
       }
     );
+    console.clear()
     init();
+
   });
 }
 
@@ -348,14 +356,15 @@ function selectEmployeeToUpdate() {
         `SELECT id FROM employee WHERE first_name = "${first_name}"`,
         (error, id) => {
           let idNumber = id[0].id;
-          console.log(typeof response.roleUpdate);
           connection.query(
             `UPDATE employee_role SET ? WHERE id = "${idNumber}"`,
             {
               title: response.roleUpdate,
             }
           );
+          console.clear()
           init();
+
         }
       );
     });
@@ -391,14 +400,15 @@ function selectEmployeeToUpdateManager() {
         `SELECT id FROM employee WHERE first_name = "${first_name}"`,
         (error, id) => {
           let idNumber = id[0].id;
-          console.log(typeof response.managerUpdate);
           connection.query(
             `UPDATE employee SET ? WHERE id = "${idNumber}"`,
             {
               manager_name: response.managerUpdate,
             }
           );
+          console.clear()
           init();
+       
         }
       );
     });
