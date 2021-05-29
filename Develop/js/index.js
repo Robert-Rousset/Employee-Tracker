@@ -14,8 +14,6 @@ const connection = mysql.createConnection({
   database: "employee_db",
 });
 
-let allManagerNames = [];
-
 // ----------------------ALL PROMPT QUESTIONS----------------------\\
 let firstQuestions = [
   {
@@ -72,9 +70,8 @@ let addEmployees = [
   },
   {
     type: "input",
-    name: "manager",
+    name: "manager_name",
     message: "Who is the employee's Manager?",
-    choices: `${allManagerNames}`,
   },
 ];
 
@@ -127,7 +124,7 @@ function displayAllEmployees() {
     JOIN department ON department_id = department.id`,
     (error, response) => {
       if (error) throw error;
-      console.table("\n",response, "\n");
+      console.table("\n", response, "\n");
     }
   );
   init();
@@ -142,18 +139,54 @@ function displayAllEmployeesByDepartment() {
       WHERE department_name = "${response.department}"`,
       (error, response) => {
         if (error) throw error;
-     
+
         console.table("\n", response, "\n");
-        
       }
     );
     init();
   });
 }
 
+let allManagerNames = [];
+
+let selectWhichManager = [
+  {
+    type: "list",
+    name: "name",
+    message: "Which Manager would you like to group employee's by?",
+    choices: allManagerNames,
+  },
+];
+
 function displayAllEmployeesByManager() {
-  inquirer.prompt(displayByManager).then((response) => {
+  connection.query(`SELECT manager_name FROM employee`, (error, response) => {
+    if (error) throw error;
+    allManagerNames.length = 0;
     console.log(response);
+    for (let index = 0; index < response.length; index++) {
+      const element = response[index].manager_name;
+      console.log(element);
+      if (element != null) {
+        allManagerNames.push(element);
+      }
+    }
+    selectManager();
+  });
+}
+
+function selectManager() {
+  inquirer.prompt(selectWhichManager).then((response) => {
+    connection.query(
+      `SELECT * FROM employee 
+            JOIN employee_role ON role_id = employee_role.id
+            JOIN department ON department_id = department.id
+            WHERE manager_name = "${response.name}"`,
+      (error, response) => {
+        if (error) throw error;
+
+        console.table("\n", response, "\n");
+      }
+    );
     init();
   });
 }
@@ -199,6 +232,7 @@ function addEmployee() {
               {
                 first_name: response.first_name,
                 last_name: response.last_name,
+                manager_name: response.manager_name,
                 role_id: roleIdNum,
               },
               (error, response) => {
@@ -278,6 +312,14 @@ let roleUpdate = [
   },
 ];
 
+let managerUpdate = [
+  {
+    type: "input",
+    name: "managerUpdate",
+    message: "Who is this employees new manager?"
+  }
+]
+
 function updateRole() {
   connection.query(
     `SELECT first_name, last_name FROM employee`,
@@ -321,10 +363,45 @@ function selectEmployeeToUpdate() {
 }
 
 function updateManager() {
+  connection.query(
+    `SELECT first_name, last_name FROM employee`,
+    (error, response) => {
+      if (error) throw error;
+
+      // reducing the employee name array to zero so that it doesn't create duplicates after multiple selections of this function.
+      employeeNames.length = 0;
+
+      // pushing all the response elements to the array
+      response.forEach((element) => {
+        employeeNames.push(element.first_name + " " + element.last_name);
+      });
+      selectEmployeeToUpdateManager();
+    }
+  );
+
+}
+
+function selectEmployeeToUpdateManager() {
   inquirer.prompt(selectEmployee).then((response) => {
     let eachName = response.selection.split(" ");
     let first_name = eachName.shift();
-    console.log(response);
+    inquirer.prompt(managerUpdate).then((response) => {
+      connection.query(
+        // grabbing the correct ID so that each row can be deleted with its unique indentifier.
+        `SELECT id FROM employee WHERE first_name = "${first_name}"`,
+        (error, id) => {
+          let idNumber = id[0].id;
+          console.log(typeof response.managerUpdate);
+          connection.query(
+            `UPDATE employee SET ? WHERE id = "${idNumber}"`,
+            {
+              manager_name: response.managerUpdate,
+            }
+          );
+          init();
+        }
+      );
+    });
   });
 }
 
